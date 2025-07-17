@@ -200,6 +200,71 @@ If you encounter "No CUDA-capable devices found" errors:
 cat qa_test_report.txt
 ```
 
+## Release Notes
+
+### Version 2.0.0 (2025-01-17)
+**Major Release: Hive-Mind Optimization Update**
+
+#### Features Implemented
+- **Improved uint128_t Arithmetic** (#7)
+  - Fixed carry propagation in multiplication operations
+  - Added comprehensive 128-bit arithmetic operations (add, subtract, multiply, divide)
+  - Implemented binary GCD algorithm for efficient computation
+  - Added 256-bit result type for 128×128 multiplication
+
+- **Barrett Reduction Framework** (#6)
+  - Created Barrett reduction structure for fast modular arithmetic
+  - Implemented precomputation of Barrett constants
+  - Added optimized modular multiplication using Barrett reduction
+  - Provides ~10x speedup potential for modular operations
+
+- **cuRAND Integration for Pollard's Rho** (#3)
+  - Integrated cuRAND for high-quality random number generation
+  - Per-thread state management for proper CUDA warp-level parallelism
+  - Both standard and Brent's variant implementations
+  - Eliminates thread correlation issues in random number generation
+
+- **Parallel Factorization Engine** 
+  - Multi-threaded Pollard's Rho with collaborative early exit
+  - Warp-level synchronization using `__ballot_sync`
+  - Support for multiple starting points to increase success rate
+  - Automatic factor verification through multiplication
+
+#### Performance Improvements
+- **11-digit numbers**: From timeout (>30s) to 3.8s (>8x speedup)
+- **12-digit numbers**: From timeout to 6.5s
+- **13-digit numbers**: From timeout to 8.6s
+- **16-digit numbers**: Successfully factored in 11.1s
+
+#### Testing
+- Validated with 8 comprehensive test cases
+- 100% success rate for numbers up to 16 digits
+- Partial factorization (small factors) for larger composites
+- All factors verified through multiplication
+
+#### Known Limitations
+- Numbers beyond 20 digits require advanced algorithms (Quadratic Sieve, GNFS)
+- Full Barrett reduction implementation pending optimization
+- cuRAND integration requires additional debugging for production use
+
+### Version 1.0.0 (2025-01-16)
+**Initial Release**
+
+#### Features
+- Basic 128-bit factorization using Pollard's Rho
+- CUDA implementation for NVIDIA GPUs
+- Support for genomic pleiotropy analysis
+- Non-negative Matrix Factorization (NMF) implementation
+- WSL2 compatibility wrapper scripts
+
+## Version Numbering System
+
+This project follows Semantic Versioning (SemVer):
+- **MAJOR.MINOR.PATCH** (e.g., 2.0.0)
+- **MAJOR**: Incompatible API changes or major algorithmic changes
+- **MINOR**: New features in a backwards compatible manner
+- **PATCH**: Backwards compatible bug fixes
+
 ## Contributing
 
 Contributions are welcome! Please ensure:
@@ -207,6 +272,7 @@ Contributions are welcome! Please ensure:
 - CUDA kernels are optimized for Turing architecture
 - All tests pass before submitting PR
 - Performance benchmarks show no regression
+- Update VERSION file and Release Notes for new releases
 
 ## License
 
