@@ -1,0 +1,81 @@
+{
+  "sessionId": "session-1752714201111-g72fpcctv",
+  "checkpointId": "checkpoint-1752714231138-tju1k82mf",
+  "checkpointName": "auto-save-1752714231137",
+  "timestamp": "2025-07-17T01:03:51.139Z",
+  "data": {
+    "timestamp": "2025-07-17T01:03:51.137Z",
+    "changeCount": 5,
+    "changesByType": {
+      "swarm_created": [
+        {
+          "type": "swarm_created",
+          "data": {
+            "swarmId": "swarm-1752714201049-8skgkttqr",
+            "swarmName": "hive-1752714200975",
+            "objective": "Solve semiprime number factors of a 40+ digit composite numbers using Nvidia CUDA llibrary in C++ with the GTX2070 on this host",
+            "workerCount": 8
+          },
+          "timestamp": "2025-07-17T01:03:21.167Z"
+        }
+      ],
+      "agent_activity": [
+        {
+          "type": "agent_activity",
+          "data": {
+            "agentId": "worker-swarm-1752714201049-8skgkttqr-0",
+            "activity": "spawned",
+            "data": {
+              "type": "researcher",
+              "name": "Researcher Worker 1"
+            }
+          },
+          "timestamp": "2025-07-17T01:03:21.205Z"
+        },
+        {
+          "type": "agent_activity",
+          "data": {
+            "agentId": "worker-swarm-1752714201049-8skgkttqr-1",
+            "activity": "spawned",
+            "data": {
+              "type": "coder",
+              "name": "Coder Worker 2"
+            }
+          },
+          "timestamp": "2025-07-17T01:03:21.217Z"
+        },
+        {
+          "type": "agent_activity",
+          "data": {
+            "agentId": "worker-swarm-1752714201049-8skgkttqr-2",
+            "activity": "spawned",
+            "data": {
+              "type": "analyst",
+              "name": "Analyst Worker 3"
+            }
+          },
+          "timestamp": "2025-07-17T01:03:21.229Z"
+        },
+        {
+          "type": "agent_activity",
+          "data": {
+            "agentId": "worker-swarm-1752714201049-8skgkttqr-3",
+            "activity": "spawned",
+            "data": {
+              "type": "tester",
+              "name": "Tester Worker 4"
+            }
+          },
+          "timestamp": "2025-07-17T01:03:21.242Z"
+        }
+      ]
+    },
+    "statistics": {
+      "tasksProcessed": 0,
+      "tasksCompleted": 0,
+      "memoryUpdates": 0,
+      "agentActivities": 4,
+      "consensusDecisions": 0
+    }
+  }
+}
