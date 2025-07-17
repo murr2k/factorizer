@@ -1,41 +1,45 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Build files
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
 *.a
-*.lib
-
-# Executables
+*.so
+*.dll
 *.exe
 *.out
-*.app
 
-# debug information files
-*.dwo
+# CUDA-related artifacts
+*.ptx
+*.cubin
+*.fatbin
+*.nvvp
+*.prof
+*.cu.prof
+*.tmp
+
+# Compiled binaries
+factorizer
+factorizer128
+pleiotropy_analyzer
+test_cuda
+test_pleiotropy
+test128
+
+# Logs and reports
+*.log
+*.md.html
+*.testreport
+*.benchmark
+
+# IDE/editor clutter
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Hive mind session artifacts
+.hive-mind/
+.swarm/
+memory.sqlite
