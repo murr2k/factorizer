@@ -1,0 +1,39 @@
+# Makefile for CUDA Factorizer with ECM support
+
+NVCC = nvcc
+CUDA_FLAGS = -arch=sm_75 -O3 -use_fast_math -Xcompiler -march=native
+CUDA_FLAGS_DEBUG = -arch=sm_75 -g -G -lineinfo
+
+# Targets
+all: factorizer_ecm test_ecm
+
+# Main factorizer with ECM
+factorizer_ecm: factorizer_cuda_v2.2_ecm.cu ecm_cuda.cu *.cuh
+	$(NVCC) $(CUDA_FLAGS) -o factorizer_ecm factorizer_cuda_v2.2_ecm.cu
+
+# ECM test program
+test_ecm: test_ecm.cu ecm_cuda.cu *.cuh
+	$(NVCC) $(CUDA_FLAGS) -o test_ecm test_ecm.cu
+
+# Debug builds
+debug: factorizer_ecm_debug test_ecm_debug
+
+factorizer_ecm_debug: factorizer_cuda_v2.2_ecm.cu ecm_cuda.cu *.cuh
+	$(NVCC) $(CUDA_FLAGS_DEBUG) -o factorizer_ecm_debug factorizer_cuda_v2.2_ecm.cu
+
+test_ecm_debug: test_ecm.cu ecm_cuda.cu *.cuh
+	$(NVCC) $(CUDA_FLAGS_DEBUG) -o test_ecm_debug test_ecm.cu
+
+# Clean
+clean:
+	rm -f factorizer_ecm test_ecm factorizer_ecm_debug test_ecm_debug
+
+# Run tests
+test: test_ecm
+	./test_ecm
+
+# Run benchmark
+benchmark: factorizer_ecm
+	./factorizer_ecm --benchmark
+
+.PHONY: all clean test benchmark debug

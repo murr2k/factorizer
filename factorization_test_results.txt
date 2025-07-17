@@ -1,0 +1,30 @@
+======================================
+Factorizer v2.0/v2.1 Test Results
+======================================
+Date: Thu Jul 17 10:56:39 PDT 2025
+GPU: NVIDIA GeForce RTX 2070
+
+Test Results:
+=============
+
+Input: 9999999900000001
+Expected: 99999999 × 100000001
+Result: ✗ FAIL - Timeout or error
+
+Input: 111111111
+Expected: 3 × 3 × 37 × 333667
+Result: ✓ PASS - Factors: 3 9 37 111 333 333667 1001001 3003003 12345679 37037037  (Time: 262)
+
+Input: 123456789012345
+Expected: 3 × 5 × 8230452600823
+Result: ✗ FAIL - No factors found
+
+Input: 90595490423
+Expected: 428759 × 211297
+Result: ✗ FAIL - Timeout or error
+
+======================================
+Performance Summary:
+======================================
+
+Benchmarking 11-digit factorization (5 runs):

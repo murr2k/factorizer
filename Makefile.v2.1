@@ -1,0 +1,110 @@
+# Makefile for CUDA Factorizer v2.1.0
+# Performance Optimized Edition
+
+# Compiler settings
+NVCC = nvcc
+CXX = g++
+CUDA_PATH ?= /usr/local/cuda
+
+# CUDA architecture (GTX 2070 = sm_75)
+CUDA_ARCH = -arch=sm_75
+
+# Compiler flags
+NVCC_FLAGS = $(CUDA_ARCH) -O3 -use_fast_math -Xcompiler -fopenmp
+NVCC_FLAGS += -std=c++14 -lineinfo
+NVCC_FLAGS += -Xptxas -v -Xptxas -dlcm=ca
+
+# Include paths
+INCLUDES = -I$(CUDA_PATH)/include -I.
+
+# Library paths and libraries
+LDFLAGS = -L$(CUDA_PATH)/lib64
+LIBS = -lcudart -lcurand -lgmp -lnvidia-ml -lpthread
+
+# Source files
+MAIN_SRC = factorizer_cuda_v2.1.cu
+TEST_SRC = test_v2_features.cu
+
+# Header files (dependencies)
+HEADERS = uint128_improved.cuh \
+          barrett_reduction_v2.cuh \
+          montgomery_reduction.cuh \
+          curand_pollards_rho_v2.cuh \
+          progress_monitor.cuh \
+          wsl_cuda_init.h
+
+# Output files
+MAIN_BIN = factorizer_v2.1
+TEST_BIN = test_v2.1
+
+# Default target
+all: $(MAIN_BIN) $(TEST_BIN)
+
+# Main factorizer binary
+$(MAIN_BIN): $(MAIN_SRC) $(HEADERS)
+	@echo "Building CUDA Factorizer v2.1.0..."
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -o $@ $< $(LDFLAGS) $(LIBS)
+	@echo "Build complete: $@"
+
+# Test suite binary
+$(TEST_BIN): $(TEST_SRC) $(HEADERS)
+	@echo "Building test suite..."
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -o $@ $< $(LDFLAGS) $(LIBS)
+	@echo "Test suite built: $@"
+
+# Run tests
+test: $(TEST_BIN)
+	@echo "Running v2.1.0 feature tests..."
+	./$(TEST_BIN)
+
+# Benchmark
+benchmark: $(MAIN_BIN)
+	@echo "Running performance benchmark..."
+	./$(MAIN_BIN) --benchmark
+
+# Clean build artifacts
+clean:
+	rm -f $(MAIN_BIN) $(TEST_BIN)
+	rm -f *.o *.ptx *.cubin
+	rm -f factorization_progress.log
+
+# Install (optional)
+install: $(MAIN_BIN)
+	@echo "Installing factorizer v2.1..."
+	cp $(MAIN_BIN) /usr/local/bin/factorizer
+	@echo "Installation complete"
+
+# Build debug version
+debug: NVCC_FLAGS += -G -g
+debug: clean $(MAIN_BIN)
+
+# Profile with nvprof
+profile: $(MAIN_BIN)
+	nvprof --print-gpu-trace ./$(MAIN_BIN) 90595490423
+
+# Memory check
+memcheck: $(MAIN_BIN)
+	cuda-memcheck ./$(MAIN_BIN) 90595490423
+
+# Generate PTX for analysis
+ptx: $(MAIN_SRC) $(HEADERS)
+	$(NVCC) $(CUDA_ARCH) -ptx $(MAIN_SRC) -o factorizer_v2.1.ptx
+
+# Help
+help:
+	@echo "CUDA Factorizer v2.1.0 Makefile"
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all       - Build main program and tests (default)"
+	@echo "  test      - Run test suite"
+	@echo "  benchmark - Run performance benchmark"
+	@echo "  clean     - Remove build artifacts"
+	@echo "  debug     - Build with debug symbols"
+	@echo "  profile   - Run with nvprof"
+	@echo "  memcheck  - Run CUDA memory checker"
+	@echo "  ptx       - Generate PTX assembly"
+	@echo "  install   - Install to /usr/local/bin"
+	@echo "  help      - Show this help"
+
+.PHONY: all test benchmark clean install debug profile memcheck ptx help

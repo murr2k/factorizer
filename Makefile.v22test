@@ -1,0 +1,76 @@
+# Makefile for Factorizer v2.2.0 Test Suite
+
+NVCC = nvcc
+CUDA_PATH = /usr/local/cuda
+NVCC_FLAGS = -O3 -arch=sm_75 -std=c++14
+INCLUDES = -I$(CUDA_PATH)/include -I.
+LIBS = -L$(CUDA_PATH)/lib64 -lcudart -lcurand
+
+# Test suite executable
+TEST_TARGET = test_v22_suite
+
+# Source files
+TEST_SRCS = test_v22_suite.cu
+
+# Build test suite
+$(TEST_TARGET): $(TEST_SRCS) uint128_improved.cuh
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -o $@ $(TEST_SRCS) $(LIBS)
+
+# Run all tests
+test: $(TEST_TARGET)
+	./$(TEST_TARGET)
+
+# Run specific test category
+test-unit: $(TEST_TARGET)
+	./$(TEST_TARGET) unit
+
+test-component: $(TEST_TARGET)
+	./$(TEST_TARGET) component
+
+test-integration: $(TEST_TARGET)
+	./$(TEST_TARGET) integration
+
+test-benchmark: $(TEST_TARGET)
+	./$(TEST_TARGET) benchmark
+
+test-memory: $(TEST_TARGET)
+	./$(TEST_TARGET) memory
+
+test-stress: $(TEST_TARGET)
+	./$(TEST_TARGET) stress
+
+# Test specific number
+test-factor: $(TEST_TARGET)
+	@if [ -z "$(NUM)" ]; then \
+		echo "Usage: make test-factor NUM=<number>"; \
+		exit 1; \
+	fi
+	./$(TEST_TARGET) factor $(NUM)
+
+# Test the 26-digit number specifically
+test-26digit: $(TEST_TARGET)
+	./$(TEST_TARGET) factor 15482526220500967432610341
+
+# Clean build artifacts
+clean:
+	rm -f $(TEST_TARGET) *.o
+
+# Show help
+help:
+	@echo "Factorizer v2.2.0 Test Suite"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  make              - Build test suite"
+	@echo "  make test         - Run all tests"
+	@echo "  make test-unit    - Run unit tests only"
+	@echo "  make test-component - Run component tests only"
+	@echo "  make test-integration - Run integration tests only"
+	@echo "  make test-benchmark - Run performance benchmarks"
+	@echo "  make test-memory  - Run memory and GPU utilization tests"
+	@echo "  make test-stress  - Run stress tests"
+	@echo "  make test-factor NUM=<number> - Test specific number"
+	@echo "  make test-26digit - Test the 26-digit challenge number"
+	@echo "  make clean        - Remove build artifacts"
+	@echo "  make help         - Show this help message"
+
+.PHONY: test test-unit test-component test-integration test-benchmark test-memory test-stress test-factor test-26digit clean help

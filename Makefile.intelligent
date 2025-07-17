@@ -1,0 +1,89 @@
+# Makefile for Intelligent CUDA Factorizer
+
+# CUDA compiler
+NVCC = nvcc
+
+# Compiler flags
+NVCC_FLAGS = -O3 -arch=sm_75 -std=c++14 -Xcompiler -fopenmp
+DEBUG_FLAGS = -g -G -DDEBUG
+RELEASE_FLAGS = -DNDEBUG
+
+# Include paths
+INCLUDES = -I.
+
+# Source files
+SELECTOR_SRC = algorithm_selector.cu
+FACTORIZER_SRC = factorizer_intelligent.cu
+
+# Object files
+SELECTOR_OBJ = algorithm_selector.o
+FACTORIZER_OBJ = factorizer_intelligent.o
+
+# Executables
+SELECTOR_EXE = algorithm_selector
+FACTORIZER_EXE = factorizer_intelligent
+
+# Default target
+all: $(SELECTOR_EXE) $(FACTORIZER_EXE)
+
+# Build algorithm selector standalone
+$(SELECTOR_EXE): $(SELECTOR_SRC)
+	$(NVCC) $(NVCC_FLAGS) $(RELEASE_FLAGS) $(INCLUDES) -o $@ $< -lcudart
+
+# Build intelligent factorizer
+$(FACTORIZER_EXE): $(FACTORIZER_SRC) $(SELECTOR_OBJ)
+	$(NVCC) $(NVCC_FLAGS) $(RELEASE_FLAGS) $(INCLUDES) -o $@ $< $(SELECTOR_OBJ) -lcudart -lpthread
+
+# Build algorithm selector object file
+$(SELECTOR_OBJ): $(SELECTOR_SRC)
+	$(NVCC) $(NVCC_FLAGS) $(RELEASE_FLAGS) $(INCLUDES) -dc -o $@ $<
+
+# Debug builds
+debug: NVCC_FLAGS += $(DEBUG_FLAGS)
+debug: $(SELECTOR_EXE) $(FACTORIZER_EXE)
+
+# Test targets
+test-selector: $(SELECTOR_EXE)
+	@echo "Testing algorithm selector..."
+	./$(SELECTOR_EXE) 15482526220500967432610341
+	@echo
+	./$(SELECTOR_EXE) 1234567890123456789
+	@echo
+	./$(SELECTOR_EXE) 1000000007
+	@echo
+	./$(SELECTOR_EXE) 1024
+
+test-factorizer: $(FACTORIZER_EXE)
+	@echo "Testing intelligent factorizer..."
+	./$(FACTORIZER_EXE) 15482526220500967432610341
+	@echo
+	./$(FACTORIZER_EXE) 1234567890123456789
+	@echo
+	./$(FACTORIZER_EXE) 600851475143
+
+test: test-selector test-factorizer
+
+# Benchmark
+benchmark: $(FACTORIZER_EXE)
+	@echo "Benchmarking intelligent factorizer..."
+	@echo "Small numbers (< 32 bits):"
+	time ./$(FACTORIZER_EXE) 1234567 --quiet
+	time ./$(FACTORIZER_EXE) 987654321 --quiet
+	@echo
+	@echo "Medium numbers (32-64 bits):"
+	time ./$(FACTORIZER_EXE) 1234567890123 --quiet
+	time ./$(FACTORIZER_EXE) 9876543210987654321 --quiet
+	@echo
+	@echo "Large numbers (> 64 bits):"
+	time ./$(FACTORIZER_EXE) 15482526220500967432610341 --quiet
+
+# Clean
+clean:
+	rm -f $(SELECTOR_OBJ) $(FACTORIZER_OBJ) $(SELECTOR_EXE) $(FACTORIZER_EXE)
+	rm -f *.o
+
+# Install
+install: $(FACTORIZER_EXE)
+	cp $(FACTORIZER_EXE) /usr/local/bin/
+
+.PHONY: all debug test test-selector test-factorizer benchmark clean install

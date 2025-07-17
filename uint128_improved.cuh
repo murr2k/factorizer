@@ -304,4 +304,56 @@ __device__ uint128_t gcd_128(uint128_t a, uint128_t b) {
     return shift_left_128(a, shift);
 }
 
+// Improved modular multiplication with better reduction
+__device__ uint128_t modmul_128_fast(uint128_t a, uint128_t b, uint128_t n) {
+    // Ensure inputs are reduced
+    while (a >= n) a = subtract_128(a, n);
+    while (b >= n) b = subtract_128(b, n);
+    
+    // Fast path for 64-bit operands
+    if (a.high == 0 && b.high == 0 && n.high == 0 && n.low != 0) {
+        #ifdef __CUDA_ARCH__
+        // Use built-in 128-bit multiplication
+        unsigned __int128 prod = (unsigned __int128)a.low * b.low;
+        unsigned __int128 mod = prod % n.low;
+        return uint128_t((uint64_t)mod, 0);
+        #else
+        // Host fallback
+        unsigned __int128 prod = (unsigned __int128)a.low * b.low;
+        unsigned __int128 mod = prod % n.low;
+        return uint128_t((uint64_t)mod, 0);
+        #endif
+    }
+    
+    // Full multiplication
+    uint256_t prod = multiply_128_128(a, b);
+    uint128_t result(prod.word[0], prod.word[1]);
+    
+    // Binary reduction - much faster than repeated subtraction
+    if (result >= n) {
+        // Find the highest bit of n
+        int n_bits = 128 - n.leading_zeros();
+        
+        // Start with n shifted to align with the highest bit of result
+        int result_bits = 128 - result.leading_zeros();
+        int shift = result_bits - n_bits;
+        
+        if (shift >= 0) {
+            uint128_t n_shifted = shift_left_128(n, shift);
+            
+            // Binary long division
+            for (int i = shift; i >= 0; i--) {
+                if (result >= n_shifted) {
+                    result = subtract_128(result, n_shifted);
+                }
+                if (i > 0) {
+                    n_shifted = shift_right_128(n_shifted, 1);
+                }
+            }
+        }
+    }
+    
+    return result;
+}
+
 #endif // UINT128_IMPROVED_CUH

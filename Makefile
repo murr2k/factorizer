@@ -68,8 +68,52 @@ test128: test_128bit.o
 test_128bit.o: test_128bit.cu
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
 
-.PHONY: all clean benchmark profile memcheck test-all
+# v2.1 128-bit factorizer
+factorizer_v21_128bit: factorizer_v21_128bit.o
+	$(NVCC) $(NVCC_FLAGS) -o $@ $^ $(LDFLAGS)
+
+factorizer_v21_128bit.o: factorizer_v21_128bit.cu
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+
+# v2.1 128-bit factorizer diagnostic version
+factorizer_v21_128bit_diagnostic: factorizer_v21_128bit_diagnostic.o
+	$(NVCC) $(NVCC_FLAGS) -o $@ $^ $(LDFLAGS)
+
+factorizer_v21_128bit_diagnostic.o: factorizer_v21_128bit_diagnostic.cu
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+
+# 128-bit arithmetic test suite
+test_128bit_arithmetic: test_128bit_arithmetic.o
+	$(NVCC) $(NVCC_FLAGS) -o $@ $^ $(LDFLAGS)
+
+test_128bit_arithmetic.o: test_128bit_arithmetic.cu
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+
+# Pollard's rho algorithm test
+test_pollard_rho: test_pollard_rho.o
+	$(NVCC) $(NVCC_FLAGS) -o $@ $^ $(LDFLAGS)
+
+test_pollard_rho.o: test_pollard_rho.cu
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+
+.PHONY: all clean benchmark profile memcheck test-all test-arithmetic test-pollard
 
 test-all: test128 factorizer128
 	./test128
 	./factorizer128 94498503396937386863845286721509
+
+test-arithmetic: test_128bit_arithmetic
+	./test_128bit_arithmetic
+
+test-pollard: test_pollard_rho
+	./test_pollard_rho
+
+# Barrett reduction test
+test_barrett_clean: test_barrett_clean.o
+	$(NVCC) $(NVCC_FLAGS) -o $@ $^ $(LDFLAGS)
+
+test_barrett_clean.o: test_barrett_clean.cu
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+
+test-barrett: test_barrett_clean
+	./test_barrett_clean

@@ -1,0 +1,48 @@
+# Makefile for Quadratic Sieve Integration
+# CUDA Factorizer v2.2.0 with QS support
+
+NVCC = nvcc
+NVCC_FLAGS = -O3 -arch=sm_86 -std=c++14 -lineinfo
+NVCC_FLAGS += -Xcompiler -Wall -Xcompiler -Wextra
+NVCC_FLAGS += -Xptxas -v
+
+# Debug flags (uncomment for debugging)
+# NVCC_FLAGS += -G -g
+
+# Targets
+TARGETS = factorizer_v22_qs test_qs_complete
+
+all: $(TARGETS)
+
+# Main factorizer with QS integration
+factorizer_v22_qs: factorizer_v22_qs_integration.cu quadratic_sieve_complete.cu
+	$(NVCC) $(NVCC_FLAGS) -o $@ factorizer_v22_qs_integration.cu quadratic_sieve_complete.cu
+
+# Test QS implementation standalone
+test_qs_complete: test_quadratic_sieve_complete.cu quadratic_sieve_complete.cu
+	$(NVCC) $(NVCC_FLAGS) -o $@ test_quadratic_sieve_complete.cu quadratic_sieve_complete.cu
+
+# Build optimized version
+optimize: NVCC_FLAGS += -use_fast_math -prec-sqrt=false
+optimize: all
+
+# Clean
+clean:
+	rm -f $(TARGETS) *.o
+
+# Run tests
+test: factorizer_v22_qs
+	./factorizer_v22_qs
+
+# Run benchmark
+benchmark: factorizer_v22_qs
+	./factorizer_v22_qs benchmark
+
+# Test specific numbers
+test-86bit: factorizer_v22_qs
+	./factorizer_v22_qs 29318992932113061061655073
+
+test-26digit: factorizer_v22_qs
+	./factorizer_v22_qs 15482526220500967432610341
+
+.PHONY: all clean test benchmark optimize test-86bit test-26digit
