@@ -41,30 +41,30 @@ echo -e "\n[Running Benchmarks]"
 
 # Small-scale tests
 echo -e "\n--- Small Scale (Development) ---"
-./pleiotropy_analyzer --benchmark --snps 1000 --samples 100 --traits 10 --rank 5 >> $RESULT_FILE
-./pleiotropy_analyzer --benchmark --snps 2000 --samples 200 --traits 20 --rank 10 >> $RESULT_FILE
+./run_pleiotropy.sh --benchmark --snps 1000 --samples 100 --traits 10 --rank 5 >> $RESULT_FILE
+./run_pleiotropy.sh --benchmark --snps 2000 --samples 200 --traits 20 --rank 10 >> $RESULT_FILE
 
 # Medium-scale tests
 echo -e "\n--- Medium Scale (Research) ---"
-./pleiotropy_analyzer --benchmark --snps 5000 --samples 500 --traits 50 --rank 15 >> $RESULT_FILE
-./pleiotropy_analyzer --benchmark --snps 10000 --samples 1000 --traits 100 --rank 20 >> $RESULT_FILE
+./run_pleiotropy.sh --benchmark --snps 5000 --samples 500 --traits 50 --rank 15 >> $RESULT_FILE
+./run_pleiotropy.sh --benchmark --snps 10000 --samples 1000 --traits 100 --rank 20 >> $RESULT_FILE
 
 # Large-scale tests
 echo -e "\n--- Large Scale (Production) ---"
-./pleiotropy_analyzer --benchmark --snps 20000 --samples 2000 --traits 200 --rank 30 >> $RESULT_FILE
-./pleiotropy_analyzer --benchmark --snps 50000 --samples 5000 --traits 500 --rank 50 >> $RESULT_FILE
+./run_pleiotropy.sh --benchmark --snps 20000 --samples 2000 --traits 200 --rank 30 >> $RESULT_FILE
+./run_pleiotropy.sh --benchmark --snps 50000 --samples 5000 --traits 500 --rank 50 >> $RESULT_FILE
 
 # Extreme-scale test (if memory permits)
 echo -e "\n--- Extreme Scale (Stress Test) ---"
-./pleiotropy_analyzer --benchmark --snps 100000 --samples 10000 --traits 1000 --rank 100 >> $RESULT_FILE 2>&1
+./run_pleiotropy.sh --benchmark --snps 100000 --samples 10000 --traits 1000 --rank 100 >> $RESULT_FILE 2>&1
 
 # Memory optimization tests
 echo -e "\n[Memory Access Pattern Tests]"
 echo -e "\n--- Coalesced vs Non-coalesced Access ---"
-nvprof --metrics gld_efficiency,gst_efficiency ./pleiotropy_analyzer --test-memory
+nvprof --metrics gld_efficiency,gst_efficiency ./run_pleiotropy.sh --test-memory
 
 echo -e "\n--- Cache Hit Rates ---"
-nvprof --metrics l1_cache_global_hit_rate,l2_l1_read_hit_rate ./pleiotropy_analyzer --test-cache
+nvprof --metrics l1_cache_global_hit_rate,l2_l1_read_hit_rate ./run_pleiotropy.sh --test-cache
 
 # Factorization performance
 echo -e "\n[Factorization Benchmarks]"

@@ -302,6 +302,9 @@ public:
 
 // Example usage and test
 int main(int argc, char** argv) {
+    // Initialize CUDA runtime
+    cudaFree(0);  // Force CUDA runtime initialization
+    
     // Check for CUDA devices
     int deviceCount = 0;
     cudaError_t err = cudaGetDeviceCount(&deviceCount);
@@ -310,16 +313,15 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    // Initialize CUDA
-    int device = 0;
-    err = cudaSetDevice(device);
+    // Set and validate device 0
+    err = cudaSetDevice(0);
     if (err != cudaSuccess) {
         std::cerr << "Failed to set CUDA device: " << cudaGetErrorString(err) << std::endl;
         return 1;
     }
     
     cudaDeviceProp prop;
-    err = cudaGetDeviceProperties(&prop, device);
+    err = cudaGetDeviceProperties(&prop, 0);
     if (err != cudaSuccess) {
         std::cerr << "Failed to get device properties: " << cudaGetErrorString(err) << std::endl;
         return 1;
@@ -382,7 +384,9 @@ int main(int argc, char** argv) {
               << num_snps << " total genes" << std::endl;
     
     // Benchmark performance
-    analyzer.benchmark();
+    if (benchmark_mode) {
+        analyzer.benchmark();
+    }
     
     return 0;
 }
