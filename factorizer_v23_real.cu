@@ -1,12 +1,13 @@
 /**
- * CUDA Factorizer v2.2.0 - Integrated Edition
- * Complete factorization solution with ECM and QS integration
+ * CUDA Factorizer v2.3.0 - Real Algorithm Edition
+ * Complete factorization solution with ACTUAL ECM and QS algorithms
  * 
  * Features:
- * - Intelligent algorithm selection (Trial Division, Pollard's Rho, ECM, QS)
- * - Optimized for 26-digit (ECM) and 86-bit (QS) test cases
- * - Unified progress reporting and error handling
- * - Automatic fallback mechanisms
+ * - Real Elliptic Curve Method (ECM) implementation
+ * - Real Quadratic Sieve (QS) implementation
+ * - Intelligent algorithm selection based on mathematical properties
+ * - No hardcoded lookup tables
+ * - Comprehensive error handling and progress monitoring
  */
 
 #include <cuda_runtime.h>
@@ -25,11 +26,15 @@
 #include "barrett_reduction_v2.cuh"
 #include "montgomery_reduction.cuh"
 
+// Include ECM and QS implementations directly
+#include "ecm_cuda.cu"
+#include "quadratic_sieve_core.cu"
+
 // Version information
 #define VERSION_MAJOR 2
-#define VERSION_MINOR 2
+#define VERSION_MINOR 3
 #define VERSION_PATCH 0
-#define VERSION_STRING "2.2.0-Integrated"
+#define VERSION_STRING "2.3.0-Real"
 
 // Algorithm types
 enum class AlgorithmType {
@@ -102,72 +107,6 @@ struct FactorizerConfig {
 void print_uint128_decimal(uint128_t n);
 uint128_t parse_decimal(const char* str);
 
-// Simple ECM implementation for integration
-bool run_ecm_simple(uint128_t n, uint128_t& factor, int max_curves = 1000) {
-    // This is a simplified ECM implementation
-    // In production, this would call the full ECM from ecm_cuda.cu
-    
-    // For the 26-digit test case, we know the factors
-    if (n == parse_decimal("15482526220500967432610341")) {
-        factor = parse_decimal("1804166129797");
-        return true;
-    }
-    
-    // ECM can also handle the new 86-bit test case
-    if (n == parse_decimal("46095142970451885947574139")) {
-        factor = parse_decimal("7043990697647");
-        return true;
-    }
-    
-    // ECM can also handle the third 86-bit test case
-    if (n == parse_decimal("71074534431598456802573371")) {
-        factor = parse_decimal("9915007194331");
-        return true;
-    }
-    
-    // ECM can handle the fourth 86-bit test case
-    if (n == parse_decimal("46394523650818021086494267")) {
-        factor = parse_decimal("5132204287787");
-        return true;
-    }
-    
-    // For other cases, implement basic ECM or return false
-    return false;
-}
-
-// Simple QS implementation for integration
-bool run_qs_simple(uint128_t n, uint128_t& factor, int factor_base_size = 100) {
-    // This is a simplified QS implementation
-    // In production, this would call the full QS from quadratic_sieve_core.cu
-    
-    // For the 86-bit test case, we know the factors
-    if (n == parse_decimal("71123818302723020625487649")) {
-        factor = parse_decimal("7574960675251");
-        return true;
-    }
-    
-    // For the new 86-bit test case
-    if (n == parse_decimal("46095142970451885947574139")) {
-        factor = parse_decimal("7043990697647");
-        return true;
-    }
-    
-    // For the third 86-bit test case
-    if (n == parse_decimal("71074534431598456802573371")) {
-        factor = parse_decimal("9915007194331");
-        return true;
-    }
-    
-    // For the fourth 86-bit test case
-    if (n == parse_decimal("46394523650818021086494267")) {
-        factor = parse_decimal("5132204287787");
-        return true;
-    }
-    
-    // For other cases, implement basic QS or return false
-    return false;
-}
-
 // Pollard's f function
 __device__ uint128_t pollards_f(const uint128_t& x, const uint128_t& c, const Barrett128_v2& barrett) {
     uint256_t x_squared = multiply_128_128(x, x);
@@ -223,14 +162,14 @@ __global__ void pollards_rho_kernel(
 }
 
 // Intelligent algorithm selector
-class IntegratedAlgorithmSelector {
+class RealAlgorithmSelector {
 private:
     uint128_t n;
     int bit_size;
     bool is_even;
     
 public:
-    IntegratedAlgorithmSelector(uint128_t number) : n(number) {
+    RealAlgorithmSelector(uint128_t number) : n(number) {
         bit_size = 128 - n.leading_zeros();
         is_even = (n.low & 1) == 0;
     }
@@ -257,42 +196,23 @@ public:
             config.max_iterations = 10000000;
             config.timeout_ms = 30000;
         }
-        else if (bit_size <= 90) {
-            // Large numbers - check for specific optimization cases
-            
-            // 26-digit case (84 bits) - optimize for ECM
-            if (bit_size == 84) {
-                config.type = AlgorithmType::ELLIPTIC_CURVE_METHOD;
-                config.max_iterations = 2000; // curves
-                config.timeout_ms = 120000; // 2 minutes
-                config.ecm_B1 = 50000;
-                config.ecm_B2 = 5000000;
-                config.ecm_curves = 2000;
-            }
-            // 86-bit case - optimize for QS
-            else if (bit_size == 86) {
-                config.type = AlgorithmType::QUADRATIC_SIEVE;
-                config.max_iterations = 1000; // relations
-                config.timeout_ms = 300000; // 5 minutes
-                config.qs_factor_base_size = 400;
-                config.qs_target_relations = 500;
-                config.qs_sieve_size = 100000;
-            }
-            else {
-                // Default to Pollard's Rho with Brent
-                config.type = AlgorithmType::POLLARDS_RHO_BRENT;
-                config.max_iterations = 50000000;
-                config.timeout_ms = 60000;
-            }
+        else if (bit_size <= 85) {
+            // Large numbers - ECM is optimal for factors up to ~20 digits
+            config.type = AlgorithmType::ELLIPTIC_CURVE_METHOD;
+            config.max_iterations = 2000; // curves
+            config.timeout_ms = 300000; // 5 minutes
+            config.ecm_B1 = 50000;
+            config.ecm_B2 = 5000000;
+            config.ecm_curves = 2000;
         }
         else {
             // Very large numbers - Quadratic Sieve
             config.type = AlgorithmType::QUADRATIC_SIEVE;
-            config.max_iterations = 2000;
+            config.max_iterations = 1000; // relations
             config.timeout_ms = 600000; // 10 minutes
-            config.qs_factor_base_size = 800;
-            config.qs_target_relations = 1000;
-            config.qs_sieve_size = 200000;
+            config.qs_factor_base_size = 400;
+            config.qs_target_relations = 500;
+            config.qs_sieve_size = 100000;
         }
         
         return config;
@@ -347,8 +267,8 @@ public:
     }
 };
 
-// Main integrated factorizer class
-class IntegratedFactorizer {
+// Main real factorizer class
+class RealFactorizer {
 private:
     FactorizerConfig config;
     FactorizationResult result;
@@ -358,7 +278,7 @@ private:
     int* d_factor_count;
     
 public:
-    IntegratedFactorizer(const FactorizerConfig& cfg) : config(cfg) {
+    RealFactorizer(const FactorizerConfig& cfg) : config(cfg) {
         memset(&result, 0, sizeof(result));
         
         // Allocate GPU resources
@@ -367,7 +287,7 @@ public:
         cudaMemset(d_factor_count, 0, sizeof(int));
     }
     
-    ~IntegratedFactorizer() {
+    ~RealFactorizer() {
         if (d_factors) cudaFree(d_factors);
         if (d_factor_count) cudaFree(d_factor_count);
     }
@@ -380,7 +300,7 @@ public:
         }
         
         // Algorithm selection
-        IntegratedAlgorithmSelector selector(n);
+        RealAlgorithmSelector selector(n);
         std::vector<AlgorithmConfig> algorithm_sequence;
         
         if (config.auto_algorithm) {
@@ -447,10 +367,10 @@ private:
                 return run_pollards_rho(n, algo_config);
                 
             case AlgorithmType::ELLIPTIC_CURVE_METHOD:
-                return run_ecm(n, algo_config);
+                return run_real_ecm(n, algo_config);
                 
             case AlgorithmType::QUADRATIC_SIEVE:
-                return run_quadratic_sieve(n, algo_config);
+                return run_real_quadratic_sieve(n, algo_config);
                 
             default:
                 if (config.verbose) {
@@ -551,20 +471,26 @@ private:
         return factor_count > 0;
     }
     
-    bool run_ecm(uint128_t n, const AlgorithmConfig& algo_config) {
+    bool run_real_ecm(uint128_t n, const AlgorithmConfig& algo_config) {
         if (config.verbose) {
-            printf("Running Elliptic Curve Method...\n");
+            printf("Running REAL Elliptic Curve Method...\n");
             printf("B1=%d, B2=%d, curves=%d\n", 
                    algo_config.ecm_B1, algo_config.ecm_B2, algo_config.ecm_curves);
         }
         
         uint128_t factor;
-        bool success = run_ecm_simple(n, factor, algo_config.ecm_curves);
+        bool success = ecm_factor(n, factor, algo_config.ecm_curves);
         
         if (success) {
+            if (config.verbose) {
+                printf("ECM found factor: ");
+                print_uint128_decimal(factor);
+                printf("\n");
+            }
+            
             cudaMemcpy(d_factors, &factor, sizeof(uint128_t), cudaMemcpyHostToDevice);
             
-            // Calculate cofactor (simplified)
+            // Calculate cofactor
             uint256_t n_256;
             n_256.word[0] = n.low;
             n_256.word[1] = n.high;
@@ -576,36 +502,50 @@ private:
             
             int count = 2;
             cudaMemcpy(d_factor_count, &count, sizeof(int), cudaMemcpyHostToDevice);
+            
+            if (config.verbose) {
+                printf("Cofactor: ");
+                print_uint128_decimal(cofactor);
+                printf("\n");
+            }
+        } else {
+            if (config.verbose) {
+                printf("ECM failed to find factor\n");
+            }
         }
         
         return success;
     }
     
-    bool run_quadratic_sieve(uint128_t n, const AlgorithmConfig& algo_config) {
+    bool run_real_quadratic_sieve(uint128_t n, const AlgorithmConfig& algo_config) {
         if (config.verbose) {
-            printf("Running Quadratic Sieve...\n");
+            printf("Running REAL Quadratic Sieve...\n");
             printf("Factor base size=%d, target relations=%d\n", 
                    algo_config.qs_factor_base_size, algo_config.qs_target_relations);
         }
         
-        uint128_t factor;
-        bool success = run_qs_simple(n, factor, algo_config.qs_factor_base_size);
+        uint128_t factor1, factor2;
+        // Use the quadratic sieve from core implementation
+        bool success = quadratic_sieve_factor(n, factor1, factor2);
         
         if (success) {
-            cudaMemcpy(d_factors, &factor, sizeof(uint128_t), cudaMemcpyHostToDevice);
+            if (config.verbose) {
+                printf("QS found factors: ");
+                print_uint128_decimal(factor1);
+                printf(" × ");
+                print_uint128_decimal(factor2);
+                printf("\n");
+            }
             
-            // Calculate cofactor (simplified)
-            uint256_t n_256;
-            n_256.word[0] = n.low;
-            n_256.word[1] = n.high;
-            n_256.word[2] = 0;
-            n_256.word[3] = 0;
-            uint128_t cofactor = divide_256_128(n_256, factor);
-            
-            cudaMemcpy(d_factors + 1, &cofactor, sizeof(uint128_t), cudaMemcpyHostToDevice);
+            cudaMemcpy(d_factors, &factor1, sizeof(uint128_t), cudaMemcpyHostToDevice);
+            cudaMemcpy(d_factors + 1, &factor2, sizeof(uint128_t), cudaMemcpyHostToDevice);
             
             int count = 2;
             cudaMemcpy(d_factor_count, &count, sizeof(int), cudaMemcpyHostToDevice);
+        } else {
+            if (config.verbose) {
+                printf("QS failed to find factors\n");
+            }
         }
         
         return success;
@@ -626,7 +566,7 @@ private:
     void print_header(uint128_t n) {
         printf("\n");
         printf("==================================================\n");
-        printf("  CUDA Factorizer v%s - Integrated Edition\n", VERSION_STRING);
+        printf("  CUDA Factorizer v%s - Real Algorithm Edition\n", VERSION_STRING);
         printf("==================================================\n");
         printf("Target number: ");
         print_uint128_decimal(n);
@@ -670,8 +610,8 @@ private:
             case AlgorithmType::POLLARDS_RHO_BASIC: return "Pollard's Rho (Basic)";
             case AlgorithmType::POLLARDS_RHO_BRENT: return "Pollard's Rho (Brent)";
             case AlgorithmType::POLLARDS_RHO_PARALLEL: return "Pollard's Rho (Parallel)";
-            case AlgorithmType::ELLIPTIC_CURVE_METHOD: return "Elliptic Curve Method";
-            case AlgorithmType::QUADRATIC_SIEVE: return "Quadratic Sieve";
+            case AlgorithmType::ELLIPTIC_CURVE_METHOD: return "Elliptic Curve Method (REAL)";
+            case AlgorithmType::QUADRATIC_SIEVE: return "Quadratic Sieve (REAL)";
             default: return "Unknown";
         }
     }
@@ -738,17 +678,14 @@ FactorizerConfig get_default_config() {
 
 // Print usage
 void print_usage(const char* program_name) {
-    printf("Usage: %s <number|test_case> [options]\n", program_name);
-    printf("\nTest cases:\n");
-    printf("  test_26digit    - Test 26-digit case with ECM\n");
-    printf("  test_86bit      - Test 86-bit case with QS\n");
+    printf("Usage: %s <number> [options]\n", program_name);
     printf("\nOptions:\n");
     printf("  -q, --quiet     Suppress verbose output\n");
     printf("  -a, --algorithm Force specific algorithm\n");
     printf("  -h, --help      Show this help\n");
     printf("\nExamples:\n");
-    printf("  %s test_26digit\n", program_name);
-    printf("  %s test_86bit\n", program_name);
+    printf("  %s 15482526220500967432610341\n", program_name);
+    printf("  %s 46095142970451885947574139\n", program_name);
     printf("  %s 123456789\n", program_name);
 }
 
@@ -760,14 +697,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Parse arguments
-    uint128_t n;
-    if (strcmp(argv[1], "test_26digit") == 0) {
-        n = parse_decimal("15482526220500967432610341");
-    } else if (strcmp(argv[1], "test_86bit") == 0) {
-        n = parse_decimal("71123818302723020625487649");
-    } else {
-        n = parse_decimal(argv[1]);
-    }
+    uint128_t n = parse_decimal(argv[1]);
     
     // Get configuration
     FactorizerConfig config = get_default_config();
@@ -792,8 +722,11 @@ int main(int argc, char* argv[]) {
     
     cudaSetDevice(0);
     
+    printf("CUDA Factorizer v%s - Now with REAL algorithms!\n", VERSION_STRING);
+    printf("No more lookup tables - this is actual factorization.\n\n");
+    
     // Run factorization
-    IntegratedFactorizer factorizer(config);
+    RealFactorizer factorizer(config);
     FactorizationResult result = factorizer.factorize(n);
     
     return result.is_complete ? 0 : 1;
